@@ -10,25 +10,26 @@ Frontend
 [Live Demo](https://stridesport.netlify.app/)
 
 ## Directory Structure
-stride sport/
--cart.html
--cart.css
--cart.js
--club.html
--club.css
--club.js
--index.html      # Main HTML file
--index.css       # CSS file for styling
--index.js        # JavaScript file for interactions
--productDetails
--products.html
--products.css
--products.js
--signin.html
--signin.css
--signin.js
--wishlist.html
--wishlist.js
+Stride Sport/
+├── cart.html
+├── cart.css
+├── cart.js
+├── club.html
+├── club.css
+├── club.js
+├── index.html      # Main HTML file
+├── index.css       # CSS file for styling
+├── index.js        # JavaScript file for interactions
+├── productDetails
+├── products.html
+├── products.css
+├── products.js
+├── signin.html
+├── signin.css
+├── signin.js
+├── wishlist.html
+├── wishlist.css
+└── wishlist.js
 
 
 
