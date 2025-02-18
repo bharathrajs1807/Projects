@@ -11,25 +11,24 @@ Frontend
 
 ## Directory Structure
 stride sport/
-├── cart.html
-├── cart.css
-├── cart.js
-├── club.html
-├── club.css
-├── club.js
-├── index.html      # Main HTML file
-├── index.css       # CSS file for styling
-├── index.js        # JavaScript file for interactions
-├── productDetails
-├── products.html
-├── products.css
-├── products.js
-├── signin.html
-├── signin.css
-├── signin.js
-├── wishlist.html
-├── wishlist.css
-└── wishlist.js
+-cart.html
+-cart.css
+-cart.js
+-club.html
+-club.css
+-club.js
+-index.html      # Main HTML file
+-index.css       # CSS file for styling
+-index.js        # JavaScript file for interactions
+-productDetails
+-products.html
+-products.css
+-products.js
+-signin.html
+-signin.css
+-signin.js
+-wishlist.html
+-wishlist.js
 
 
 
@@ -42,16 +41,15 @@ stride sport/
      <td  colspan=3>Landing Page<img src="Screenshots/landing_page.png" width=1000 ></td>
   </tr>
   <tr align=center>
-     <td>Sign in Page<img src="Screenshots/signin_page.png" height=250></td>
+    <td>Sign in Page<img src="Screenshots/signin_page.png" height=250></td>
     <td>Product Page<img src="Screenshots/product_page.png" height=250></td>
     <td>Club Page<img src="Screenshots/club_page.png" height=250></td>
-   </tr>
-    <tr align=center>
-      <td>Cart Page<img src="Screenshots/cart_page.png" height=250></td>
+  </tr>
+  <tr align=center>
+    <td>Cart Page<img src="Screenshots/cart_page.png" height=250></td>
     <td>Wishlist Page<img src="Screenshots/wishlist_page.png" height=250 ></td>
     <td>Footer <img src="Screenshots/footer.png" height=250 ></td>
   </tr> 
- 
 </table>
 
 ## Features
