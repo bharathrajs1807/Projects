@@ -1,0 +1,333 @@
+html,
+body {
+    margin: 0%;
+    padding: 0%;
+}
+
+#container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+}
+
+#container>div {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    width: 75%;
+    padding: 1rem;
+}
+
+#container>div>form {
+    width: 100%;
+}
+
+#container>div>h1 {
+    font-size: 2rem;
+    text-indent: 1rem;
+}
+
+#container>div>form>* {
+    margin: 1rem;
+    width: 100%;
+}
+
+#container>div>form>label {
+    font-size: 1.4rem;
+}
+
+#container>div>form>input {
+    margin: 1rem;
+    min-width: 100%;
+    height: 3rem;
+    border: 1px solid grey;
+    border-radius: 1rem;
+}
+
+#container>div>form>input[type="submit"] {
+    border: 2px solid black;
+    background-color: black;
+    color: white;
+}
+
+#container>div>form>input[type="submit"]:hover {
+    background-color: white;
+    color: black;
+    cursor: pointer;
+}
+
+#container>div>form>p {
+    font-size: 1.2rem;
+}
+
+#container>div>form a {
+    color: black;
+}
+
+#container>div>#changepassword {
+    margin: 2rem;
+}
+
+.visible {
+    visibility: visible;
+}
+
+.hidden {
+    visibility: hidden;
+}
+
+/* header */
+header {
+    position: sticky;
+    top: 0;
+    background-color: white;
+    width: 100%;
+    z-index: 1;
+}
+
+#headerDiv {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 50px;
+}
+
+.logo {
+    padding-bottom: 20px;
+    margin-left: 120px;
+    align-items: center;
+    width: 80px;
+}
+
+.logo>img {
+    margin-top: 25px;
+    width: 100px;
+    height: 50px;
+    cursor: pointer;
+}
+
+.categoryHeader {
+    padding: 25px;
+    margin-right: 200px;
+    position: relative;
+}
+
+.categories {
+    margin: 15px;
+    text-decoration: none;
+    font-size: 15px;
+    cursor: pointer;
+    color: black;
+
+}
+
+.icons {
+    display: flex;
+    gap: 20px;
+    padding-top: 10px;
+    margin-right: 150px;
+    cursor: pointer;
+}
+
+.en {
+    display: flex;
+    gap: 5px;
+}
+/* footer */
+
+footer {
+    font-family: "Liter", serif;
+}
+
+.paymentImg {
+    width: 20px;
+    height: 13px;
+}
+
+.paymentsImg {
+    margin-top: 10px;
+    width: 30px;
+    height: 20px;
+}
+
+#upperDiv {
+    color: white;
+    background-color: red;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 150px;
+}
+
+#upperDiv>h1 {
+    margin-left: 120px;
+    font-weight: bold;
+}
+
+#joinBtn {
+    background-color: black;
+    color: white;
+    border: none;
+    font-size: 20px;
+    padding: 10px 130px;
+    margin-right: 120px;
+}
+
+#joinBtn:hover {
+    background-color: rgba(3, 59, 122, 1);
+}
+
+#middleDiv {
+    display: flex;
+    gap: 120px;
+    margin-left: 130px;
+    font-size: 13px;
+    padding: 40px 0;
+}
+
+#middleDiv p {
+    cursor: pointer;
+}
+
+#downDiv {
+    color: white;
+    background: rgb(2, 0, 36);
+    background: linear-gradient(90deg, rgba(2, 0, 36, 1) 0%, rgba(3, 59, 122, 1) 0%);
+    padding: 15px 15px;
+}
+
+#downDiv>p {
+    font-size: 13px;
+    margin-left: 120px;
+}
+
+#change {
+    color: black;
+    text-decoration: underline;
+}
+
+/* hoverlist */
+#women {
+    display: none;
+    position: absolute;
+    background: white;
+    padding: 20px;
+    z-index: 100;
+    width: 100%;
+    gap: 180px;
+    padding-left: 50px;
+    height: 450px;
+    font-size: 13px;
+}
+
+#men {
+    display: none;
+    position: absolute;
+    background: white;
+    padding: 20px;
+    z-index: 100;
+    width: 100%;
+    gap: 180px;
+    padding-left: 50px;
+    height: 450px;
+    font-size: 13px;
+}
+
+#kids {
+    display: none;
+    position: absolute;
+    background: white;
+    padding: 20px;
+    z-index: 100;
+    width: 100%;
+    gap: 140px;
+    padding-left: 50px;
+    height: 200px;
+    font-size: 15px;
+}
+
+#classics {
+    display: none;
+    grid-template-columns: repeat(3, 0fr);
+    gap: 20px;
+    padding-left: 50px;
+    padding-top: 3rem;
+}
+
+.img {
+    overflow: hidden;
+    width: 280px;
+}
+
+.img img {
+    width: 250px;
+    height: 150px;
+    margin-bottom: 10px;
+
+}
+
+.img a {
+    color: black;
+}
+
+#sports {
+    display: none;
+    position: absolute;
+    background: white;
+    padding: 20px;
+    z-index: 100;
+    width: 100%;
+    gap: 160px;
+    padding-left: 50px;
+    height: 300px;
+    font-size: 15px;
+}
+
+#navcart {
+    display: none;
+    position: absolute;
+    right: 0;
+    background: white;
+    z-index: 100;
+    width: 24rem;
+    height: 7rem;
+    padding: 2rem;
+}
+
+#navcartBtn {
+    padding: 0.8rem 8rem;
+    background-color: black;
+    color: white;
+    border: none;
+}
+
+#navcartBtn:hover {
+    background-color: rgba(3, 59, 122, 1);
+}
+
+#navcart>div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#bagdiv>p {
+    margin-right: 20px;
+    font-size: large;
+}
+
+#women p {
+    cursor: pointer;
+}
+
+#women-menu:hover,
+#men-menu:hover,
+#kids-menu:hover,
+#classics-menu:hover,
+#sport-menu:hover,
+#stride-menu:hover,
+#stories-menu:hover {
+    text-decoration: underline;
+}
