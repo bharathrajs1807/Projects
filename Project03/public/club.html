@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Club</title>
+    <link rel="stylesheet" href="club.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="logo">
+                <img src="./Images/ClubNexus.png" alt="Logo" class="logo-img">
+            </div>
+
+            <div class="user-actions">
+                <input type="text" id="searchBar" placeholder="Search profiles and clubs..." />
+                <button id="searchBtn" class="search-button">Search</button>
+                <span id="username">Username</span>
+                <button id="logoutBtn" class="logout-button">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="club-container">
+        <section class="search-results" id="searchResults" style="display:none;">
+            <h2>Search Results</h2>
+            <div id="searchResultsContainer"></div>
+        </section>
+        <br><br>
+        <section class="club-info">
+            <div id="clubDetails">
+                <p><strong>Club Name:</strong> <span id="clubName"></span></p>
+                <p><strong>Description:</strong> <span id="clubDescription"></span></p>
+                <p><strong>Type:</strong> <span id="clubType"></span></p>
+                <p><strong>Created By:</strong> <span id="clubCreatedBy"></span></p>
+            </div>
+            <button id="followClubBtn">Follow Club</button>
+        </section>
+    </div>
+
+    <div class="wall-container">
+        <section class="create-post">
+            <textarea id="postContent" placeholder="What would you like to post?" rows="4"></textarea>
+            <button id="postBtn">Post</button>
+        </section>
+
+        <section class="posts-container" id="postsContainer">
+        </section>
+    </div>
+
+    <script>
+        const accessToken = localStorage.getItem("accessToken");
+        const refreshToken = localStorage.getItem("refreshToken");
+        const username = localStorage.getItem("username");
+        const followClubBtn = document.getElementById("followClubBtn");
+        const postContent = document.getElementById("postContent");
+        const postBtn = document.getElementById("postBtn");
+        const postsContainer = document.getElementById("postsContainer");
+        const logoutBtn = document.getElementById("logoutBtn");
+        const usernameDisplay = document.getElementById("username");
+        const searchBtn = document.getElementById("searchBtn");
+        const searchBar = document.getElementById("searchBar");
+        const createPostBtn = document.getElementById("createPostBtn");
+
+        usernameDisplay.textContent = username;
+
+        let isFollowing = false;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const logo = document.querySelector(".logo-img");
+            const usernameDisplay = document.getElementById("username");
+
+            logo.addEventListener("click", () => {
+                window.location.href = "wall.html";
+            });
+
+            usernameDisplay.addEventListener("click", () => {
+                window.location.href = `profile.html?username=${username}`;
+            });
+        });
+
+        postBtn.addEventListener("click", async () => {
+            const content = postContent.value.trim();
+            if (content) {
+                try {
+                    const clubname = new URLSearchParams(window.location.search).get("clubname");
+                    const response = await fetch(`https://clubnexus.onrender.com/post?username=${username}&clubname=${clubname}`, {
+                        method: "POST",
+                        headers: {
+                            "Authorization": `Bearer ${accessToken}`,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ content })
+                    });
+
+                    if (response.ok) {
+                        postContent.value = "";
+                        fetchPosts();
+                    } else {
+                        console.error("Failed to create post.");
+                    }
+                } catch (error) {
+                    console.error("Error creating post:", error);
+                }
+            }
+        });
+
+        async function toggleLikeDislike(postId, action) {
+            try {
+                const response = await fetch(`https://clubnexus.onrender.com/post/${postId}/update-${action}?username=${username}`, {
+                    method: "PATCH",
+                    headers: {
+                        "Authorization": `Bearer ${accessToken}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ username })
+                });
+
+                if (response.ok) {
+                    fetchPosts();
+                } else {
+                    console.error(`Failed to ${action} post.`);
+                }
+            } catch (error) {
+                console.error(`Error toggling ${action}:`, error);
+            }
+        }
+
+        async function addComment(postId, comment) {
+            try {
+                const response = await fetch(`https://clubnexus.onrender.com/post/${postId}/add-comment?username=${username}`, {
+                    method: "PATCH",
+                    headers: {
+                        "Authorization": `Bearer ${accessToken}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ username, comment })
+                });
+
+                if (response.ok) {
+                    fetchPosts();
+                } else {
+                    console.error("Failed to add comment.");
+                }
+            } catch (error) {
+                console.error("Error adding comment:", error);
+            }
+        }
+
+        async function fetchClubDetails() {
+            const clubname = new URLSearchParams(window.location.search).get("clubname");
+            try {
+                const response = await fetch(`https://clubnexus.onrender.com/club/${clubname}`, {
+                    method: "GET",
+                    headers: {
+                        "Authorization": `Bearer ${accessToken}`
+                    }
+                });
+                const { club } = await response.json();
+                checkFollowStatus(club.clubname);
+                document.getElementById("clubName").textContent = club.clubname;
+                document.getElementById("clubDescription").textContent = club.description;
+                document.getElementById("clubType").textContent = club.type;
+                document.getElementById("clubCreatedBy").textContent = club.createdBy.username;
+            } catch (error) {
+                console.error("Error fetching club details:", error);
+            }
+        }
+
+        async function checkFollowStatus(clubname) {
+            try {
+                const response = await fetch(`https://clubnexus.onrender.com/profile/${username}`, {
+                    method: "GET",
+                    headers: {
+                        "Authorization": `Bearer ${accessToken}`
+                    }
+                });
+
+                if (response.status === 401) {
+                    await refreshAccessToken();
+                } else if (response.ok) {
+                    const profile = await response.json();
+                    const isAlreadyFollowing = profile.clubs.some(club => club.clubname===clubname);
+                    if (isAlreadyFollowing) {
+                        isFollowing = true;
+                        followClubBtn.textContent = "Unfollow";
+                    } else {
+                        isFollowing = false;
+                        followClubBtn.textContent = "Follow";
+                    }
+                } else {
+                    throw new Error("Failed to fetch profile info");
+                }
+            } catch (error) {
+                console.error("Error fetching user profile:", error);
+            }
+        }
+
+        followClubBtn.addEventListener("click", async () => {
+            const clubname = new URLSearchParams(window.location.search).get("clubname");
+
+            try {
+                if (isFollowing) {
+                    const response = await fetch(`https://clubnexus.onrender.com/profile/${username}/remove-club`, {
+                        method: "PATCH",
+                        headers: {
+                            "Authorization": `Bearer ${accessToken}`,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ clubname })
+                    });
+
+                    if (response.ok) {
+                        isFollowing = false;
+                        followClubBtn.textContent = "Follow";
+                    } else {
+                        console.error("Failed to unfollow club.");
+                    }
+                } else {
+                    const response = await fetch(`https://clubnexus.onrender.com/profile/${username}/add-club`, {
+                        method: "PATCH",
+                        headers: {
+                            "Authorization": `Bearer ${accessToken}`,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ clubname })
+                    });
+
+                    if (response.ok) {
+                        isFollowing = true;
+                        followClubBtn.textContent = "Unfollow";
+                    } else {
+                        console.error("Failed to follow club.");
+                    }
+                }
+            } catch (error) {
+                console.error("Error with follow/unfollow:", error);
+            }
+        });
+
+
+        async function fetchPosts() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const response = await fetch(`https://clubnexus.onrender.com/post?clubname=${params.get("clubname")}`, {
+                    method: "GET",
+                    headers: {
+                        "Authorization": `Bearer ${accessToken}`
+                    }
+                });
+
+                if (response.status === 401) {
+                    await refreshAccessToken();
+                } else if (response.ok) {
+                    const data = await response.json();
+                    displayPosts(data);
+                } else {
+                    throw new Error("Failed to fetch posts");
+                }
+            } catch (error) {
+                console.error("Error fetching posts:", error);
+            }
+        }
+
+        async function refreshAccessToken() {
+            try {
+                const response = await fetch("https://clubnexus.onrender.com/refresh", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ refreshToken })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem("accessToken", data.accessToken);
+                    fetchPosts();
+                } else {
+                    window.location.href = "login.html";
+                }
+            } catch (error) {
+                console.error("Error refreshing access token:", error);
+                window.location.href = "login.html";
+            }
+        }
+
+        function displayPosts(posts) {
+            postsContainer.innerHTML = "";
+            posts.forEach(post => {
+                const postElement = document.createElement("div");
+                postElement.classList.add("post");
+
+                postElement.innerHTML = `
+                    <div class="post-header">
+                        <span class="post-username">${post.createdBy.username}</span>
+                        <span class="post-time">${new Date(post.createdAt).toLocaleString()}</span>
+                    </div>
+                    <div class="post-content">
+                        <p>${post.content}</p>
+                    </div>
+                    <div class="post-actions">
+                        <span class="likes" data-post-id="${post._id}">Likes: ${post.likes.length}</span>
+                        <span class="dislikes" data-post-id="${post._id}">Dislikes: ${post.dislikes.length}</span>
+                    </div>
+                    <div class="comments-section">
+                        <div class="comments">
+                            ${post.comments.map(c => `
+                                <div class="comment">
+                                    <span class="comment-username">${c.userId.username}:</span>
+                                    <span class="comment-text">${c.comment}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <textarea class="comment-input" placeholder="Add a comment..."></textarea>
+                        <button class="add-comment-btn" data-post-id="${post._id}">Comment</button>
+                    </div>
+                `;
+
+                postsContainer.appendChild(postElement);
+            });
+
+            addPostEventListeners();
+        }
+
+        function addPostEventListeners() {
+            document.querySelectorAll(".likes").forEach(likeButton => {
+                likeButton.addEventListener("click", async () => {
+                    const postId = likeButton.getAttribute("data-post-id");
+                    await toggleLikeDislike(postId, 'likes');
+                });
+            });
+
+            document.querySelectorAll(".dislikes").forEach(dislikeButton => {
+                dislikeButton.addEventListener("click", async () => {
+                    const postId = dislikeButton.getAttribute("data-post-id");
+                    await toggleLikeDislike(postId, 'dislikes');
+                });
+            });
+
+            document.querySelectorAll(".add-comment-btn").forEach(button => {
+                button.addEventListener("click", async () => {
+                    const postId = button.getAttribute("data-post-id");
+                    const commentInput = button.previousElementSibling;
+                    const comment = commentInput.value.trim();
+
+                    if (comment) {
+                        await addComment(postId, comment);
+                    }
+                });
+            });
+        }
+
+        searchBtn.addEventListener("click", () => {
+            const query = searchBar.value.trim();
+            if (query) {
+                searchProfilesAndClubs(query);
+            }
+        });
+
+        async function searchProfilesAndClubs(query) {
+            try {
+                const response = await fetch(`https://clubnexus.onrender.com/search?query=${query}`, {
+                    method: "GET",
+                    headers: {
+                        "Authorization": `Bearer ${accessToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    displaySearchResults(data);
+                } else {
+                    console.error("Failed to search profiles and clubs.");
+                }
+            } catch (error) {
+                console.error("Error searching:", error);
+            }
+        }
+
+        function displaySearchResults(data) {
+            const searchResultsContainer = document.getElementById("searchResultsContainer");
+            const searchResultsSection = document.getElementById("searchResults");
+
+            searchResultsContainer.innerHTML = "";
+
+            if (data.users.length > 0 || data.clubs.length > 0) {
+                if (data.users.length > 0) {
+                    const usersList = document.createElement("div");
+                    usersList.innerHTML = "<h3>Users:</h3>";
+                    data.users.forEach(user => {
+                        usersList.innerHTML += `<p><a href="profile.html?username=${user.username}">${user.username}</a></p>`;
+                    });
+                    searchResultsContainer.appendChild(usersList);
+                }
+
+                if (data.clubs.length > 0) {
+                    const clubsList = document.createElement("div");
+                    clubsList.innerHTML = "<h3>Clubs:</h3>";
+                    data.clubs.forEach(club => {
+                        clubsList.innerHTML += `<p><a href="club.html?clubname=${club.clubname}">${club.clubname}</a></p>`;
+                    });
+                    searchResultsContainer.appendChild(clubsList);
+                }
+            } else {
+                searchResultsContainer.innerHTML = "<p>No results found.</p>";
+            }
+
+            searchResultsSection.style.display = "block";
+        }
+
+        logoutBtn.addEventListener("click", async () => {
+            try {
+                const response = await fetch("https://clubnexus.onrender.com/log-out", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ refreshToken })
+                });
+
+                if (response.status === 200) {
+                    localStorage.removeItem("accessToken");
+                    localStorage.removeItem("refreshToken");
+                    localStorage.removeItem("username");
+                    window.location.href = "login.html";
+                } else {
+                    throw new Error("Failed to logout.");
+                }
+            } catch (error) {
+                console.error("Error logging out:", error);
+            }
+        });
+
+        document.addEventListener("DOMContentLoaded", () => {
+            fetchClubDetails();
+            fetchPosts();
+        });
+
+    </script>
+</body>
+
+</html>
