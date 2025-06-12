@@ -1,0 +1,21 @@
+Temporal.io
+    Temporal is a platform for building long-running applications like workflow engine
+    It is durable
+    Used to reduce the errors and retries automatically on failure
+
+Temporal has
+    Workers
+    Temporal Server
+    Built-in retries, timers, signals, task queues, and state history
+
+Used for
+    Payment Flows
+    AI Pipelines
+    Custom Schedulers, Queue Handling, Cron Jobs, and State Management
+
+
+To start temporal server locally
+    temporal server start-dev --ui-port 8080
+
+In activities.ts
+    Copy the api from https://crudcrud.com/
