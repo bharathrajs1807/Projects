@@ -243,70 +243,74 @@
   </div>
 
   <script>
+    // DOM Elements
     const modal = document.getElementById('userModal');
     const form = document.getElementById('userForm');
     const successMessage = document.getElementById('successMessage');
     const usersGrid = document.getElementById('usersGrid');
     let currentUserId = null;
 
-    // Show error message for invalid input
+    // Constants
+    const API_BASE_URL = 'http://localhost:3000/api';
+    const SUCCESS_DURATION = 3000;
+
+    // Utility Functions
     function showError(input, errorId) {
       const errorElement = document.getElementById(errorId);
-      if (!input.checkValidity()) {
-        errorElement.style.display = 'block';
-        input.style.borderColor = '#dc2626';
-      } else {
-        errorElement.style.display = 'none';
-        input.style.borderColor = '#d1d5db';
-      }
+      input.classList.add('error');
+      errorElement.style.display = 'block';
     }
 
-    // Add input validation listeners
-    form.querySelectorAll('input').forEach(input => {
-      input.addEventListener('input', () => {
-        showError(input, `${input.id}Error`);
-      });
-    });
+    function hideError(input, errorId) {
+      const errorElement = document.getElementById(errorId);
+      input.classList.remove('error');
+      errorElement.style.display = 'none';
+    }
 
-    // Open modal for creating/editing user
+    function showSuccess(message) {
+      successMessage.textContent = message;
+      successMessage.style.display = 'block';
+      setTimeout(() => {
+        successMessage.style.display = 'none';
+      }, SUCCESS_DURATION);
+    }
+
+    // Modal Functions
     function openModal(userId = null) {
       currentUserId = userId;
-      const modalTitle = document.getElementById('modalTitle');
-      modalTitle.textContent = userId ? 'Edit User' : 'Create New User';
+      document.getElementById('modalTitle').textContent = userId ? 'Edit User' : 'Create New User';
+      form.reset();
+      modal.style.display = 'flex';
       
       if (userId) {
-        // Fetch user data for editing
         fetchUser(userId);
-      } else {
-        // Clear form for new user
-        form.reset();
       }
-      
-      modal.style.display = 'flex';
     }
 
-    // Close modal
     function closeModal() {
       modal.style.display = 'none';
       form.reset();
       currentUserId = null;
+      document.querySelectorAll('.error').forEach(error => error.style.display = 'none');
     }
 
-    // Fetch all users
+    // API Functions
     async function fetchUsers() {
       try {
-        const response = await fetch('http://localhost:3000/api/users');
+        const response = await fetch(`${API_BASE_URL}/users`);
+        if (!response.ok) throw new Error('Failed to fetch users');
         const users = await response.json();
         displayUsers(users);
       } catch (error) {
         console.error('Error fetching users:', error);
+        showSuccess('Failed to load users. Please try again.');
       }
     }
 
-    // Fetch single user
     async function fetchUser(userId) {
       try {
-        const response = await fetch(`http://localhost:3000/api/users/${userId}`);
+        const response = await fetch(`${API_BASE_URL}/users/${userId}`);
+        if (!response.ok) throw new Error('Failed to fetch user');
         const user = await response.json();
         if (user) {
           document.getElementById('userId').value = user._id;
@@ -318,10 +322,29 @@
         }
       } catch (error) {
         console.error('Error fetching user:', error);
+        showSuccess('Failed to load user data. Please try again.');
       }
     }
 
-    // Display users in grid
+    async function deleteUser(userId) {
+      if (!confirm('Are you sure you want to delete this user?')) return;
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+          method: 'DELETE'
+        });
+        
+        if (!response.ok) throw new Error('Failed to delete user');
+        
+        showSuccess('User deleted successfully!');
+        fetchUsers();
+      } catch (error) {
+        console.error('Error deleting user:', error);
+        showSuccess('Failed to delete user. Please try again.');
+      }
+    }
+
+    // Display Functions
     function displayUsers(users) {
       usersGrid.innerHTML = users.map(user => `
         <div class="user-card">
@@ -337,58 +360,36 @@
       `).join('');
     }
 
-    // Delete user
-    async function deleteUser(userId) {
-      if (!confirm('Are you sure you want to delete this user?')) return;
-      
-      try {
-        const response = await fetch(`http://localhost:3000/api/users/${userId}`, {
-          method: 'DELETE'
-        });
-        
-        if (response.ok) {
-          showSuccess('User deleted successfully');
-          fetchUsers();
-        } else {
-          throw new Error('Failed to delete user');
-        }
-      } catch (error) {
-        console.error('Error deleting user:', error);
-        alert('Failed to delete user. Please try again.');
-      }
-    }
-
-    // Show success message
-    function showSuccess(message) {
-      successMessage.textContent = message;
-      successMessage.style.display = 'block';
-      setTimeout(() => {
-        successMessage.style.display = 'none';
-      }, 3000);
-    }
-
-    // Handle form submission
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      // Validate all inputs
+    // Form Validation
+    function validateForm() {
       let isValid = true;
-      form.querySelectorAll('input').forEach(input => {
+      const inputs = form.querySelectorAll('input[required]');
+      
+      inputs.forEach(input => {
         if (!input.checkValidity()) {
           showError(input, `${input.id}Error`);
           isValid = false;
+        } else {
+          hideError(input, `${input.id}Error`);
         }
       });
+      
+      return isValid;
+    }
 
-      if (!isValid) return;
+    // Event Listeners
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (!validateForm()) return;
 
       try {
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData.entries());
         
         const url = currentUserId 
-          ? `http://localhost:3000/api/users/${currentUserId}`
-          : 'http://localhost:3000/api/users';
+          ? `${API_BASE_URL}/users/${currentUserId}`
+          : `${API_BASE_URL}/users`;
         
         const response = await fetch(url, {
           method: currentUserId ? 'PATCH' : 'POST',
@@ -396,22 +397,29 @@
           body: JSON.stringify(data)
         });
 
-        if (response.ok) {
-          const result = await response.json();
-          showSuccess(currentUserId ? 'User updated successfully!' : 'User created successfully!');
-          closeModal();
-          fetchUsers();
-        } else {
-          throw new Error('Failed to save user');
-        }
+        if (!response.ok) throw new Error('Failed to save user');
+
+        showSuccess(currentUserId ? 'User updated successfully!' : 'User created successfully!');
+        closeModal();
+        fetchUsers();
       } catch (error) {
         console.error('Error saving user:', error);
-        alert('Failed to save user. Please try again.');
+        showSuccess('Failed to save user. Please try again.');
       }
     });
 
-    // Initial fetch
+    // Input validation listeners
+    form.querySelectorAll('input').forEach(input => {
+      input.addEventListener('input', () => {
+        if (input.checkValidity()) {
+          hideError(input, `${input.id}Error`);
+        }
+      });
+    });
+
+    // Initialize
     fetchUsers();
   </script>
 </body>
+</html> 
 </html> 
