@@ -39,28 +39,83 @@ app.get('/api/users/:id', async (req: any, res: any) => {
 });
 
 // POST new user
-app.post('/api/users', async (req: Request<{}, {}, IUser>, res: Response) => {
+app.post('/api/users', async (req: any, res: any) => {
   try {
+    // Validate request body
+    const { firstName, lastName, phone, city, pincode } = req.body;
+    if (!firstName || !lastName || !phone || !city || !pincode) {
+      return res.status(400).json({ 
+        error: 'Missing required fields. Please provide firstName, lastName, phone, city, and pincode.' 
+      });
+    }
+
+    // Validate phone number format (10 digits)
+    if (!/^\d{10}$/.test(phone)) {
+      return res.status(400).json({ 
+        error: 'Invalid phone number format. Please provide a 10-digit number.' 
+      });
+    }
+
+    // Validate pincode format (6 digits)
+    if (!/^\d{6}$/.test(pincode)) {
+      return res.status(400).json({ 
+        error: 'Invalid pincode format. Please provide a 6-digit number.' 
+      });
+    }
+
     const newUser = new User(req.body);
     await newUser.save();
     
-    const connection = await Connection.connect();
-    const client = new Client({ connection });
-    await client.workflow.start(updateProfileWorkflow, {
-      args: [newUser.toObject()],
-      taskQueue: 'profile-task-queue',
-      workflowId: `create-user-${newUser._id}`
-    });
+    try {
+      const connection = await Connection.connect();
+      const client = new Client({ connection });
+      await client.workflow.start(updateProfileWorkflow, {
+        args: [newUser.toObject()],
+        taskQueue: 'profile-task-queue',
+        workflowId: `create-user-${newUser._id}`
+      });
+    } catch (workflowError) {
+      console.error('Temporal workflow error:', workflowError);
+      // Don't fail the request if workflow fails, just log it
+    }
     
     res.status(201).json(newUser);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to create user' });
+  } catch (error: any) {
+    console.error('Create user error:', error);
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ 
+        error: 'Validation error: ' + Object.values(error.errors).map((e: any) => e.message).join(', ')
+      });
+    }
+    res.status(500).json({ error: 'Failed to create user: ' + error.message });
   }
 });
 
 // PATCH update user
 app.patch('/api/users/:id', async (req: any, res: any) => {
   try {
+    // Validate request body
+    const { firstName, lastName, phone, city, pincode } = req.body;
+    if (!firstName || !lastName || !phone || !city || !pincode) {
+      return res.status(400).json({ 
+        error: 'Missing required fields. Please provide firstName, lastName, phone, city, and pincode.' 
+      });
+    }
+
+    // Validate phone number format (10 digits)
+    if (!/^\d{10}$/.test(phone)) {
+      return res.status(400).json({ 
+        error: 'Invalid phone number format. Please provide a 10-digit number.' 
+      });
+    }
+
+    // Validate pincode format (6 digits)
+    if (!/^\d{6}$/.test(pincode)) {
+      return res.status(400).json({ 
+        error: 'Invalid pincode format. Please provide a 6-digit number.' 
+      });
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
       req.body,
@@ -71,17 +126,28 @@ app.patch('/api/users/:id', async (req: any, res: any) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const connection = await Connection.connect();
-    const client = new Client({ connection });
-    await client.workflow.start(updateProfileWorkflow, {
-      args: [updatedUser.toObject()],
-      taskQueue: 'profile-task-queue',
-      workflowId: `update-user-${updatedUser._id}`
-    });
+    try {
+      const connection = await Connection.connect();
+      const client = new Client({ connection });
+      await client.workflow.start(updateProfileWorkflow, {
+        args: [updatedUser.toObject()],
+        taskQueue: 'profile-task-queue',
+        workflowId: `update-user-${updatedUser._id}`
+      });
+    } catch (workflowError) {
+      console.error('Temporal workflow error:', workflowError);
+      // Don't fail the request if workflow fails, just log it
+    }
 
     res.json(updatedUser);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to update user' });
+  } catch (error: any) {
+    console.error('Update user error:', error);
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ 
+        error: 'Validation error: ' + Object.values(error.errors).map((e: any) => e.message).join(', ')
+      });
+    }
+    res.status(500).json({ error: 'Failed to update user: ' + error.message });
   }
 });
 
