@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up - Platformatory</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="profile-container">
+    <nav class="profile-nav">
+      <div class="nav-content">
+        <h1>Platformatory</h1>
+        <a href="index.html" class="back-btn">
+          <i class="fas fa-arrow-left"></i>
+          Back
+        </a>
+      </div>
+    </nav>
+
+    <main class="profile-main">
+      <div class="profile-header">
+        <div class="profile-avatar">
+          <i class="fas fa-user-plus"></i>
+        </div>
+        <h2>Create Your Account</h2>
+        <p class="profile-subtitle">Join our platform today</p>
+      </div>
+
+      <div class="profile-card">
+        <form id="signupForm" class="profile-form">
+          <div class="form-group">
+            <label for="firstName">First Name</label>
+            <div class="input-wrapper">
+              <i class="fas fa-user"></i>
+              <input name="firstName" id="firstName" placeholder="Enter your first name" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <div class="input-wrapper">
+              <i class="fas fa-user"></i>
+              <input name="lastName" id="lastName" placeholder="Enter your last name" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email</label>
+            <div class="input-wrapper">
+              <i class="fas fa-envelope"></i>
+              <input type="email" name="email" id="email" placeholder="Enter your email" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <div class="input-wrapper">
+              <i class="fas fa-lock"></i>
+              <input type="password" name="password" id="password" placeholder="Create a password" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <div class="input-wrapper">
+              <i class="fas fa-phone"></i>
+              <input name="phone" id="phone" placeholder="Enter your phone number" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="city">City</label>
+            <div class="input-wrapper">
+              <i class="fas fa-city"></i>
+              <input name="city" id="city" placeholder="Enter your city" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="pincode">Pincode</label>
+            <div class="input-wrapper">
+              <i class="fas fa-map-marker-alt"></i>
+              <input name="pincode" id="pincode" placeholder="Enter your pincode" required />
+            </div>
+          </div>
+
+          <button type="submit" class="update-btn">
+            <i class="fas fa-user-plus"></i>
+            Create Account
+          </button>
+
+          <p class="auth-switch">
+            Already have an account? <a href="login.html">Login here</a>
+          </p>
+        </form>
+      </div>
+    </main>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>

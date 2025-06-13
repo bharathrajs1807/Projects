@@ -1,114 +1,123 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
+import bcrypt from 'bcryptjs';
 import { Connection, Client } from '@temporalio/client';
 import { updateProfileWorkflow } from './workflows';
 import { connectDB } from './config/database';
-import { User, IUser } from './models/User'; // Make sure IUser interface exists in your model
+import { User, IUser } from './models/User';
 
+// Initialize express app
 const app = express();
 const PORT = 3000;
 
 // Connect to MongoDB
 connectDB();
 
+// Middleware
 app.use(cors());
 app.use(bodyParser.json());
 
-// GET all users
-app.get('/api/users', async (_req: Request, res: Response) => {
+// Validation helpers
+const validatePhone = (phone: string): boolean => /^\d{10}$/.test(phone);
+const validatePincode = (pincode: string): boolean => /^\d{6}$/.test(pincode);
+
+// Auth Routes
+app.post('/api/auth/signup', async (req: any, res: any) => {
   try {
-    const users = await User.find().sort({ createdAt: -1 });
-    res.json(users);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch users' });
-  }
-});
+    const { firstName, lastName, email, password, phone, city, pincode } = req.body;
 
-// GET single user
-app.get('/api/users/:id', async (req: any, res: any) => {
-  try {
-    const user = await User.findById(req.params.id);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch user' });
-  }
-});
-
-// POST new user
-app.post('/api/users', async (req: any, res: any) => {
-  try {
-    const { firstName, lastName, phone, city, pincode } = req.body;
-    if (!firstName || !lastName || !phone || !city || !pincode) {
-      return res.status(400).json({ 
-        error: 'Missing required fields. Please provide firstName, lastName, phone, city, and pincode.' 
-      });
+    // Validate required fields
+    if (!firstName || !lastName || !email || !password || !phone || !city || !pincode) {
+      return res.status(400).json({ error: 'Missing required fields.' });
     }
 
-    if (!/^\d{10}$/.test(phone)) {
-      return res.status(400).json({ 
-        error: 'Invalid phone number format. Please provide a 10-digit number.' 
-      });
+    // Validate phone and pincode format
+    if (!validatePhone(phone)) {
+      return res.status(400).json({ error: 'Phone must be a 10-digit number.' });
     }
 
-    if (!/^\d{6}$/.test(pincode)) {
-      return res.status(400).json({ 
-        error: 'Invalid pincode format. Please provide a 6-digit number.' 
-      });
+    if (!validatePincode(pincode)) {
+      return res.status(400).json({ error: 'Pincode must be a 6-digit number.' });
     }
 
-    const newUser = new User(req.body);
+    // Check for existing user
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ error: 'Email already in use' });
+    }
+
+    // Create new user
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new User({ ...req.body, password: hashedPassword });
     await newUser.save();
-    
+
+    // Trigger Temporal workflow
     try {
       const connection = await Connection.connect();
       const client = new Client({ connection });
+      const workflowId = `user-${newUser._id}`;
+      
       await client.workflow.start(updateProfileWorkflow, {
         args: [newUser.toObject()],
         taskQueue: 'profile-task-queue',
-        workflowId: `create-user-${newUser._id}`
+        workflowId
       });
     } catch (workflowError) {
       console.error('Temporal workflow error:', workflowError);
+      // Continue with user creation even if workflow fails
     }
-    
-    res.status(201).json(newUser);
+
+    // Return user data (excluding password)
+    const { password: _, ...userData } = newUser.toObject();
+    res.status(201).json(userData);
   } catch (error: any) {
-    console.error('Create user error:', error);
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({ 
-        error: 'Validation error: ' + Object.values(error.errors).map((e: any) => e.message).join(', ')
-      });
-    }
+    console.error('Signup error:', error);
     res.status(500).json({ error: 'Failed to create user: ' + error.message });
   }
 });
 
-// PATCH update user
-app.patch('/api/users/:id', async (req: any, res: any) => {
+app.post('/api/auth/login', async (req: any, res: any) => {
+  const { email, password } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(401).json({ error: 'Invalid email or password' });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(401).json({ error: 'Invalid email or password' });
+
+    // Return user data without password
+    const { password: _, ...userData } = user.toObject();
+    res.json(userData);
+  } catch (error) {
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+app.post('/api/auth/logout', (_req, res) => {
+  res.json({ message: 'Logged out successfully' });
+});
+
+// Profile Routes
+app.patch('/api/profile/:id', async (req: any, res: any) => {
   try {
     const { firstName, lastName, phone, city, pincode } = req.body;
+
+    // Validate required fields
     if (!firstName || !lastName || !phone || !city || !pincode) {
-      return res.status(400).json({ 
-        error: 'Missing required fields. Please provide firstName, lastName, phone, city, and pincode.' 
-      });
+      return res.status(400).json({ error: 'Missing required fields.' });
     }
 
-    if (!/^\d{10}$/.test(phone)) {
-      return res.status(400).json({ 
-        error: 'Invalid phone number format. Please provide a 10-digit number.' 
-      });
+    // Validate phone and pincode format
+    if (!validatePhone(phone)) {
+      return res.status(400).json({ error: 'Phone must be a 10-digit number.' });
     }
 
-    if (!/^\d{6}$/.test(pincode)) {
-      return res.status(400).json({ 
-        error: 'Invalid pincode format. Please provide a 6-digit number.' 
-      });
+    if (!validatePincode(pincode)) {
+      return res.status(400).json({ error: 'Pincode must be a 6-digit number.' });
     }
 
+    // Update user
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
       req.body,
@@ -119,46 +128,34 @@ app.patch('/api/users/:id', async (req: any, res: any) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // Trigger Temporal workflow
     try {
       const connection = await Connection.connect();
       const client = new Client({ connection });
+      const workflowId = `user-${updatedUser._id}`;
 
       await client.workflow.signalWithStart(updateProfileWorkflow, {
-        workflowId: `update-user-${updatedUser._id}`,
-        taskQueue: 'update-profile',
+        workflowId,
+        taskQueue: 'profile-task-queue',
         args: [updatedUser.toObject()],
         signal: 'updateProfileSignal',
         signalArgs: [updatedUser.toObject()],
       });
     } catch (workflowError) {
       console.error('Temporal workflow error:', workflowError);
+      // Continue with user update even if workflow fails
     }
 
-    res.json(updatedUser);
+    // Return updated user data without password
+    const { password: _, ...userData } = updatedUser.toObject();
+    res.json(userData);
   } catch (error: any) {
     console.error('Update user error:', error);
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({ 
-        error: 'Validation error: ' + Object.values(error.errors).map((e: any) => e.message).join(', ')
-      });
-    }
     res.status(500).json({ error: 'Failed to update user: ' + error.message });
   }
 });
 
-// DELETE user
-app.delete('/api/users/:id', async (req: any, res: any) => {
-  try {
-    const deletedUser = await User.findByIdAndDelete(req.params.id);
-    if (!deletedUser) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    res.json({ message: 'User deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to delete user' });
-  }
-});
-
+// Start server
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
