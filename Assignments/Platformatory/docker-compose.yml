@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # Frontend service
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+  # Backend service
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/platformatory
+      - NODE_ENV=production
+    depends_on:
+      - mongodb
+      - temporal
+    networks:
+      - app-network
+
+  # MongoDB service
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - app-network
+
+  # Temporal service
+  temporal:
+    image: temporalio/auto-setup:1.20.0
+    container_name: temporal
+    ports:
+      - "7233:7233"
+    environment:
+      - DB=sqlite
+      - LOG_LEVEL=debug
+    networks:
+      - app-network
+
+
+  # Temporal Admin UI
+  temporal-admin:
+    image: temporalio/admin-tools:1.20.0
+    depends_on:
+      - temporal
+    networks:
+      - app-network
+    entrypoint: ["sh", "-c", "sleep 5 && tctl --ns default workflow list"]
+
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  temporal_data: 
