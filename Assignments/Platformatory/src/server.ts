@@ -41,7 +41,6 @@ app.get('/api/users/:id', async (req: any, res: any) => {
 // POST new user
 app.post('/api/users', async (req: any, res: any) => {
   try {
-    // Validate request body
     const { firstName, lastName, phone, city, pincode } = req.body;
     if (!firstName || !lastName || !phone || !city || !pincode) {
       return res.status(400).json({ 
@@ -49,14 +48,12 @@ app.post('/api/users', async (req: any, res: any) => {
       });
     }
 
-    // Validate phone number format (10 digits)
     if (!/^\d{10}$/.test(phone)) {
       return res.status(400).json({ 
         error: 'Invalid phone number format. Please provide a 10-digit number.' 
       });
     }
 
-    // Validate pincode format (6 digits)
     if (!/^\d{6}$/.test(pincode)) {
       return res.status(400).json({ 
         error: 'Invalid pincode format. Please provide a 6-digit number.' 
@@ -76,7 +73,6 @@ app.post('/api/users', async (req: any, res: any) => {
       });
     } catch (workflowError) {
       console.error('Temporal workflow error:', workflowError);
-      // Don't fail the request if workflow fails, just log it
     }
     
     res.status(201).json(newUser);
@@ -94,7 +90,6 @@ app.post('/api/users', async (req: any, res: any) => {
 // PATCH update user
 app.patch('/api/users/:id', async (req: any, res: any) => {
   try {
-    // Validate request body
     const { firstName, lastName, phone, city, pincode } = req.body;
     if (!firstName || !lastName || !phone || !city || !pincode) {
       return res.status(400).json({ 
@@ -102,14 +97,12 @@ app.patch('/api/users/:id', async (req: any, res: any) => {
       });
     }
 
-    // Validate phone number format (10 digits)
     if (!/^\d{10}$/.test(phone)) {
       return res.status(400).json({ 
         error: 'Invalid phone number format. Please provide a 10-digit number.' 
       });
     }
 
-    // Validate pincode format (6 digits)
     if (!/^\d{6}$/.test(pincode)) {
       return res.status(400).json({ 
         error: 'Invalid pincode format. Please provide a 6-digit number.' 
@@ -129,14 +122,16 @@ app.patch('/api/users/:id', async (req: any, res: any) => {
     try {
       const connection = await Connection.connect();
       const client = new Client({ connection });
-      await client.workflow.start(updateProfileWorkflow, {
+
+      await client.workflow.signalWithStart(updateProfileWorkflow, {
+        workflowId: `update-user-${updatedUser._id}`,
+        taskQueue: 'update-profile',
         args: [updatedUser.toObject()],
-        taskQueue: 'profile-task-queue',
-        workflowId: `update-user-${updatedUser._id}`
+        signal: 'updateProfileSignal',
+        signalArgs: [updatedUser.toObject()],
       });
     } catch (workflowError) {
       console.error('Temporal workflow error:', workflowError);
-      // Don't fail the request if workflow fails, just log it
     }
 
     res.json(updatedUser);
