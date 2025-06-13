@@ -4,7 +4,16 @@ import {
   setHandler,
   condition,
   defineSignal,
+  RetryPolicy,
 } from '@temporalio/workflow';
+
+// Define retry policy for activities
+const retryPolicy: RetryPolicy = {
+  initialInterval: '1 second',
+  maximumInterval: '10 seconds',
+  backoffCoefficient: 2,
+  maximumAttempts: 3,
+};
 
 // Activities interface
 const activities = proxyActivities<{
@@ -12,6 +21,7 @@ const activities = proxyActivities<{
   syncToCrudCrud(profile: any): Promise<void>;
 }>({
   startToCloseTimeout: '15 seconds',
+  retry: retryPolicy,
 });
 
 // Define the signal
@@ -29,16 +39,27 @@ export async function updateProfileWorkflow(initialProfile: any): Promise<void> 
   });
 
   // First save/sync
-  await activities.saveToLocalDB(latestProfile);
-  await sleep(10000);
-  await activities.syncToCrudCrud(latestProfile);
+  try {
+    await activities.saveToLocalDB(latestProfile);
+    await sleep(10000); // Wait 10 seconds before syncing
+    await activities.syncToCrudCrud(latestProfile);
+  } catch (error) {
+    console.error('Initial sync failed:', error);
+    // Continue workflow even if initial sync fails
+  }
 
   // Keep workflow alive and listen for future updates
   while (true) {
-    await condition(() => hasUpdate);
-    hasUpdate = false;
-    await activities.saveToLocalDB(latestProfile);
-    await sleep(10000);
-    await activities.syncToCrudCrud(latestProfile);
+    try {
+      await condition(() => hasUpdate);
+      hasUpdate = false;
+      
+      await activities.saveToLocalDB(latestProfile);
+      await sleep(10000); // Wait 10 seconds before syncing
+      await activities.syncToCrudCrud(latestProfile);
+    } catch (error) {
+      console.error('Update sync failed:', error);
+      // Continue workflow even if update sync fails
+    }
   }
 }
