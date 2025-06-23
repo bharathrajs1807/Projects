@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Code Editor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f7f9fb;
+            color: #222;
+        }
+        #main-layout {
+            display: flex;
+            height: 100vh;
+        }
+        #sidebar {
+            width: 220px;
+            background: #fff;
+            border-right: 1px solid #e3e7ed;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 32px 0 0 0;
+        }
+        #user-list {
+            width: 100%;
+            padding: 0 24px;
+        }
+        #user-list-title {
+            font-size: 1.05em;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #4e8cff;
+            letter-spacing: 0.5px;
+        }
+        .user-item {
+            background: none;
+            margin-bottom: 8px;
+            padding: 0;
+            border-radius: 0;
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            color: #333;
+        }
+        .user-avatar {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: #e3e7ed;
+            color: #4e8cff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1em;
+            margin-right: 10px;
+        }
+        #editor-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        #header-bar {
+            background: #fff;
+            border-bottom: 1px solid #e3e7ed;
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            font-size: 1.08em;
+            font-weight: 500;
+            color: #4e8cff;
+            min-height: 48px;
+        }
+        .header-label {
+            color: #888;
+            font-weight: 500;
+            font-size: 1em;
+            margin-right: 4px;
+        }
+        .header-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 1em;
+            font-weight: 600;
+            margin-right: 10px;
+            background: #f0f4fa;
+            color: #4e8cff;
+            letter-spacing: 0.2px;
+            vertical-align: middle;
+        }
+        .room-badge {
+            background: #4e8cff;
+            color: #fff;
+        }
+        .user-badge {
+            background: #f0f4fa;
+            color: #4e8cff;
+            border: 1px solid #e3e7ed;
+        }
+        .leave-btn {
+            margin-left: auto;
+            background: #f7f9fb;
+            color: #ff4e6e;
+            border: 1px solid #ff4e6e;
+            border-radius: 12px;
+            padding: 7px 18px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.18s, color 0.18s;
+        }
+        .leave-btn:hover {
+            background: #ff4e6e;
+            color: #fff;
+        }
+        #join-form {
+            background: #fff;
+            padding: 32px 32px 24px 32px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px #e3e7ed88;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            left: 0; right: 0; top: 0; bottom: 0;
+            margin: auto;
+            width: 320px;
+            z-index: 10;
+        }
+        #logo {
+            font-size: 1.7em;
+            font-weight: 700;
+            color: #4e8cff;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        #join-form input {
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: 1px solid #e3e7ed;
+            font-size: 1em;
+            background: #f7f9fb;
+            color: #222;
+            outline: none;
+            margin-bottom: 8px;
+            width: 100%;
+            transition: border 0.18s;
+        }
+        #join-form input:focus {
+            border: 1.5px solid #4e8cff;
+        }
+        #join-form button {
+            background: #4e8cff;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 0;
+            font-size: 1.08em;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 8px;
+            letter-spacing: 0.5px;
+            transition: background 0.18s;
+        }
+        #join-form button:hover {
+            background: #2563eb;
+        }
+        #editor {
+            width: 100%;
+            height: calc(100vh - 48px);
+            background: #f7f9fb;
+        }
+        @media (max-width: 900px) {
+            #main-layout { flex-direction: column; }
+            #sidebar { width: 100vw; border-radius: 0; border-right: none; border-bottom: 1px solid #e3e7ed; }
+            #editor-area { height: 70vh; }
+            #header-bar { padding: 12px 8px; }
+            #join-form { width: 95vw; min-width: 0; }
+        }
+        .form-label {
+            align-self: flex-start;
+            font-size: 1em;
+            font-weight: 500;
+            color: #4e8cff;
+            margin-bottom: 2px;
+            margin-top: 8px;
+            letter-spacing: 0.1px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="bg-gradient"></div>
+    <form id="join-form"
+        style="position:absolute;left:0;right:0;top:0;bottom:0;margin:auto;width:320px;z-index:10;background:#fff;padding:32px 32px 24px 32px;border-radius:12px;box-shadow:0 2px 12px #e3e7ed88;display:flex;flex-direction:column;gap:18px;align-items:center;justify-content:center;">
+        <div id="logo" class="logo">Live CodeRoom</div>
+        <label for="username" class="form-label">Your Name</label>
+        <input type="text" id="username" placeholder="Your Name" required style="margin-top:2px;">
+        <label for="room" class="form-label">Room Name</label>
+        <input type="text" id="room" placeholder="Room Name" required>
+        <button type="submit" aria-label="Join Room">Join Room</button>
+    </form>
+    <div id="main-layout" style="display:none;">
+        <div id="sidebar">
+            <div id="user-list">
+                <div id="user-list-title">Users in Room <span id="user-count"></span></div>
+                <div id="user-list-content"></div>
+            </div>
+        </div>
+        <div id="editor-area">
+            <div id="header-bar"></div>
+            <div id="editor"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
+    <script>
+        let editor, socket, currentRoom = null, username = null, cursors = {};
+        const userListContent = document.getElementById('user-list-content');
+        const userCountSpan = document.getElementById('user-count');
+        const joinForm = document.getElementById('join-form');
+        const usernameInput = document.getElementById('username');
+        const roomInput = document.getElementById('room');
+        const editorDiv = document.getElementById('editor');
+        const sidebar = document.getElementById('sidebar');
+        const editorArea = document.getElementById('editor-area');
+        const mainLayout = document.getElementById('main-layout');
+        const topBar = document.getElementById('header-bar');
+
+        // Prefill join form from localStorage if available and auto-join if both are present
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedUser = localStorage.getItem('codeeditor-username');
+            const savedRoom = localStorage.getItem('codeeditor-room');
+            if (savedUser) usernameInput.value = savedUser;
+            if (savedRoom) roomInput.value = savedRoom;
+            if (savedUser && savedRoom) {
+                autoJoin(savedUser, savedRoom);
+            }
+        });
+
+        function autoJoin(savedUser, savedRoom) {
+            username = savedUser;
+            currentRoom = savedRoom;
+            joinForm.style.display = 'none';
+            mainLayout.style.display = 'flex';
+            editorDiv.style.display = 'block';
+            if (!socket) {
+                socket = io();
+                setupSocket();
+            }
+            socket.emit('join-room', { room: currentRoom, user: username });
+            renderHeaderBar();
+            sidebar.style.display = 'flex';
+        }
+
+        function renderHeaderBar() {
+            topBar.innerHTML = `
+                <span class="header-label">Room:</span>
+                <span class="header-badge room-badge">${currentRoom}</span>
+                <span class="header-label" style="margin-left:24px;">User:</span>
+                <span class="header-badge user-badge">${username}</span>
+                <button class="leave-btn" id="leave-btn" aria-label="Leave Room">Leave Room</button>
+            `;
+            document.getElementById('leave-btn').onclick = leaveRoom;
+        }
+
+        function leaveRoom() {
+            // Clear localStorage
+            localStorage.removeItem('codeeditor-username');
+            localStorage.removeItem('codeeditor-room');
+            // Disconnect socket
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+            }
+            // Hide editor UI, show join form
+            mainLayout.style.display = 'none';
+            joinForm.style.display = 'flex';
+            // Optionally clear editor content
+            if (editor) {
+                editor.setValue('');
+            }
+        }
+
+        // Update user list in sidebar, highlight current user, and show user count
+        function updateUserList(users) {
+            userListContent.innerHTML = '';
+            userCountSpan.textContent = `(${users.length})`;
+            users.forEach(u => {
+                const div = document.createElement('div');
+                div.className = 'user-item';
+                // Avatar: first letter of username
+                const avatar = document.createElement('div');
+                avatar.className = 'user-avatar';
+                avatar.textContent = u[0] ? u[0].toUpperCase() : '?';
+                div.appendChild(avatar);
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = u;
+                // Highlight current user
+                if (u === username) {
+                    nameSpan.style.fontWeight = 'bold';
+                    nameSpan.style.color = '#00e6d0';
+                    div.style.background = 'rgba(78,140,255,0.18)';
+                    div.setAttribute('aria-current', 'true');
+                }
+                div.appendChild(nameSpan);
+                userListContent.appendChild(div);
+            });
+        }
+
+        // Join form submit handler
+        joinForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            username = usernameInput.value.trim();
+            currentRoom = roomInput.value.trim();
+            // Save to localStorage
+            localStorage.setItem('codeeditor-username', username);
+            localStorage.setItem('codeeditor-room', currentRoom);
+            if (!socket) {
+                socket = io();
+                setupSocket();
+            }
+            joinForm.style.display = 'none';
+            mainLayout.style.display = 'flex';
+            editorDiv.style.display = 'block';
+            // Show header bar with room and username and leave button
+            renderHeaderBar();
+            // Sidebar is always visible after joining
+            sidebar.style.display = 'flex';
+            socket.emit('join-room', { room: currentRoom, user: username });
+        });
+
+        function setupSocket() {
+            socket.on('init', ({ code, users, cursors: remoteCursors }) => {
+                if (!editor) initEditor(code);
+                else editor.setValue(code);
+                updateUserList(users);
+                cursors = remoteCursors || {};
+                renderRemoteCursors();
+            });
+            socket.on('user-joined', ({ user, users }) => {
+                updateUserList(users);
+            });
+            socket.on('user-left', ({ id, users }) => {
+                updateUserList(users);
+                removeRemoteCursor(id);
+            });
+            socket.on('code-change', (code) => {
+                if (editor && code !== editor.getValue()) {
+                    editor.setValue(code);
+                }
+            });
+            socket.on('cursor-change', ({ id, user, cursor }) => {
+                cursors[id] = { user, cursor };
+                renderRemoteCursors();
+            });
+        }
+
+        function initEditor(code) {
+            require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' } });
+            require(['vs/editor/editor.main'], function () {
+                editor = monaco.editor.create(editorDiv, {
+                    value: code || '',
+                    language: 'javascript',
+                    theme: 'vs-dark',
+                    automaticLayout: true,
+                    fontSize: 16,
+                    minimap: { enabled: false },
+                    roundedSelection: true,
+                    scrollBeyondLastLine: false,
+                    scrollbar: { verticalScrollbarSize: 8, horizontalScrollbarSize: 8 }
+                });
+                editor.onDidChangeModelContent(() => {
+                    if (socket && currentRoom) {
+                        socket.emit('code-change', editor.getValue());
+                    }
+                });
+                editor.onDidChangeCursorPosition(e => {
+                    if (socket && currentRoom) {
+                        socket.emit('cursor-change', e.position);
+                    }
+                });
+            });
+        }
+
+        function renderRemoteCursors() {
+            if (!editor || !monaco) return;
+            let decorations = [];
+            Object.entries(cursors).forEach(([id, { user, cursor }]) => {
+                if (socket && id === socket.id) return;
+                if (cursor) {
+                    decorations.push({
+                        range: new monaco.Range(cursor.lineNumber, cursor.column, cursor.lineNumber, cursor.column),
+                        options: {
+                            className: 'remote-cursor',
+                            hoverMessage: { value: user },
+                            isWholeLine: false,
+                            afterContentClassName: 'remote-cursor-after'
+                        }
+                    });
+                }
+            });
+            editor.deltaDecorations(editor._remoteCursorDecorations || [], decorations);
+            editor._remoteCursorDecorations = decorations.map((_, i) => i);
+        }
+
+        function removeRemoteCursor(id) {
+            delete cursors[id];
+            renderRemoteCursors();
+        }
+    </script>
+</body>
+
+</html>
