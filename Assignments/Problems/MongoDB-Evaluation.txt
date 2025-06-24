@@ -45,17 +45,6 @@
 11. Find the top 3 customers by total purchase amount with their customer details using aggregation with $lookup.
     db.sales.aggregate([
         {
-            $lookup: {
-                from: "users",
-                localField: "clientId",
-                foreignField: "_id",
-                as: "customerDetails"
-            }
-        },
-        {
-            $unwind: "$customerDetails"
-        },
-        {
             $group: {
                 _id: "$clientId",
                 totalPurchase: { $sum: "$total" },
@@ -67,6 +56,17 @@
         },
         {
             $limit: 3
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "_id",
+                foreignField: "_id",
+                as: "customerDetails"
+            }
+        },
+        {
+            $unwind: "$customerDetails"
         },
         {
             $project: {
@@ -90,7 +90,9 @@
         {
             $group: {
                 _id: "$_id",
-                totalAssignments: { $sum: 1 }
+                totalAssignments: { $sum: 1 },
+                name: { $first: "$name" },
+                email: { $first: "$email" }
             }
         },
         {
@@ -99,10 +101,10 @@
             }
         },
         {
-            project: {
+            $project: {
                 employeeId: "$_id",
-                name: "$name",
-                email: "$email",
+                name: 1,
+                email: 1,
                 totalAssignments: 1
             }
         }
