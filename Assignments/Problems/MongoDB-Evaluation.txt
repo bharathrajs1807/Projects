@@ -1,0 +1,29 @@
+1. Find all employees in the "Backend" team.
+    db.employees.find({ team : "Backend" })
+
+2. Find employees with salary greater than 70000.
+    db.employees.find({ salary: { $gt: 70000 } })
+
+3. Update the salary of employee with email "sarah@company.com" to 90000.
+    db.employees.updateOne({ email: "sarah@company.com" }, { $set: { salary: 90000 } })
+
+4. Find sales with status "pending" or "completed".
+    db.sales.find({ status: { $in: ["pending", "completed"] } })
+
+5. Find employees who have exactly 2 technologies in their skill set.
+    db.employees.find({ technologies: { $size: 2 } })
+
+6. Find employees who know both "React" and "Node.js".
+    db.employees.find({ technologies: { $all: ["React", "Node.js"] } })
+
+7. Add a new technology "GraphQL" to employee with email "sarah@company.com".
+
+8. Count the total number of employees by team using aggregation.
+
+9. Find the average salary by team using aggregation pipeline.
+
+10. Find inventory items containing "phone" in their name (case-insensitive).
+
+11. Find the top 3 customers by total purchase amount with their customer details using aggregation with $lookup.
+
+12. Find employees who have more than 1 assignment where their position is "Tech Lead" using aggregation.
