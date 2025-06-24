@@ -17,13 +17,93 @@
     db.employees.find({ technologies: { $all: ["React", "Node.js"] } })
 
 7. Add a new technology "GraphQL" to employee with email "sarah@company.com".
+    db.employees.updateOne({ email: "sarah@company.com" }, { $push: { technologies: "GraphQL" } })
 
 8. Count the total number of employees by team using aggregation.
+    db.employees.aggregate([
+        {
+            $group: {
+                _id: "$team",
+                numberOfEmployees: { $sum: 1 }
+            }
+        }
+    ])
 
 9. Find the average salary by team using aggregation pipeline.
+    db.employees.aggregate([
+        {
+            $group: {
+                _id: "$team",
+                averageSalary: { $avg: "$salary" }
+            }
+        }
+    ])
 
 10. Find inventory items containing "phone" in their name (case-insensitive).
+    db.inventory.find({ name: { $regex: "phone", $options: "i" } })
 
 11. Find the top 3 customers by total purchase amount with their customer details using aggregation with $lookup.
+    db.sales.aggregate([
+        {
+            $lookup: {
+                from: "users",
+                localField: "clientId",
+                foreignField: "_id",
+                as: "customerDetails"
+            }
+        },
+        {
+            $unwind: "$customerDetails"
+        },
+        {
+            $group: {
+                _id: "$clientId",
+                totalPurchase: { $sum: "$total" },
+                totalOrders: { $sum: 1 }
+            }
+        },
+        {
+            $sort: { totalPurchase: -1 }
+        },
+        {
+            $limit: 3
+        },
+        {
+            $project: {
+                clientId : "$_id",
+                clientName: "$customerDetails.name",
+                clientEmail: "$customerDetails.email",
+                totalOrders: 1,
+                totalPurchase: 1
+            }
+        }
+    ])
 
 12. Find employees who have more than 1 assignment where their position is "Tech Lead" using aggregation.
+    db.employees.aggregate([
+        {
+            $unwind: "$assignments"
+        },
+        {
+            $match: { "assignments.position": "Tech Lead" }
+        },
+        {
+            $group: {
+                _id: "$_id",
+                totalAssignments: { $sum: 1 }
+            }
+        },
+        {
+            $match: {
+                totalAssignments: { $gt: 1 }
+            }
+        },
+        {
+            project: {
+                employeeId: "$_id",
+                name: "$name",
+                email: "$email",
+                totalAssignments: 1
+            }
+        }
+    ])
