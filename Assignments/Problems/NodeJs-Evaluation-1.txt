@@ -1,0 +1,168 @@
+1. Directory Size Calculator
+
+    const fs = require('fs');
+    const path = require('path');
+
+    function calculateDirSize(dirPath){
+        let totalSize = 0;
+        function traversal(directory){
+            const items = fs.readdirSync(directory, { withFileTypes: true });
+            for(const item of items){
+                const fullpath = path.join(directory, item.name);
+                if(item.isFile()){
+                    const fileStats = fs.statSync(fullpath);
+                    totalSize += fileStats.size;
+                }
+                else if(item.isDirectory()){
+                    traversal(fullpath);
+                }
+            }
+        }
+
+        traversal(dirPath);
+        return totalSize;
+    }
+
+    console.log(calculateDirSize("../Problems"));
+
+2. File Backup Creator
+
+    const fs = require('fs');
+    const path = require('path');
+
+    function backupFile(filePath){
+        const { dir, name, ext } = path.parse(filePath);
+        const date = new Date().toISOString().replace(/T/, '_').replace(/:/g, '-').replace(/\..+/, '');
+        const newFileName = `document_${date}${ext}`;
+        const newFilePath = path.join(dir, newFileName);
+        fs.copyFileSync(filePath, newFileName);
+        return `The backup file path is: ${newFileName}`;
+    }
+
+    console.log(backupFile("index.js"));
+
+3. Basic Rate Limiter
+    const rateLimitStore = new Map();
+
+    function rateLimiter(req, res, next) {
+        const ip = req.ip;
+        const currentTime = Date.now();
+        const windowSize = 60 * 1000;
+        const maxRequests = 10;
+
+        if (!rateLimitStore.has(ip)) {
+            rateLimitStore.set(ip, []);
+        }
+
+        const timestamps = rateLimitStore.get(ip).filter(ts => currentTime - ts < windowSize);
+        timestamps.push(currentTime);
+        rateLimitStore.set(ip, timestamps);
+
+        if (timestamps.length > maxRequests) {
+            res.status(429).send('Too Many Requests');
+        } else {
+            next();
+        }
+    }
+
+    app.use(rateLimiter);
+
+4. Request Logger
+
+    const fs = require('fs');
+    const path = require('path');
+
+    const loggerStream = fs.createWriteStream(path.join(__dirname, 'access.log'), { flags: 'a' });
+
+    function requestLogger(req, res, next){
+        const start = Date.now();
+        
+        req.on("finish", () => {
+            const log = `[${new Date().toISOString()}] ${req.method} ${req.originalUrl} ${req.statusCode} ${Date.now() - start}ms\n`;
+            loggerStream.write(log);
+        });
+
+        next();
+    }
+
+    app.use(requestLogger);
+
+5. File Watcher
+
+
+6. Chunk File Reader
+
+    const fs = require('fs');
+
+    function readFileInChunks(filePath, chunkSize, callback) {
+        const stream = fs.createReadStream(filePath, { highWaterMark: chunkSize });
+
+        stream.on('data', chunk => {
+            callback(chunk);
+        });
+
+        stream.on('end', () => {
+            console.log('Finished reading file.');
+        });
+
+        stream.on('error', err => {
+            console.error('Error reading file:', err);
+        });
+    }
+
+    readFileInChunks('sample.txt', 1024, chunk => console.log('Chunk:', chunk.toString()));
+
+7. Error Handling Middleware
+
+    function errorHandler(err, req, res, next) {
+        console.error(`[${new Date().toISOString()}]`, err);
+
+        if (err.name === 'ValidationError') {
+            return res.status(400).json({ error: 'Validation failed', details: err.message });
+        }
+
+        if (err.name === 'UnauthorizedError') {
+            return res.status(401).json({ error: 'Unauthorized access' });
+        }
+
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+
+    app.use(errorHandler);
+
+8. User Model with Validation
+
+    const mongoose = require('mongoose');
+    const bcrypt = require('bcrypt');
+
+    const userSchema = new mongoose.Schema({
+        email: {
+            type: String,
+            required: true,
+            unique: true,
+            lowercase: true,
+            validate: {
+                validator: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
+                message: props => `${props.value} is not a valid email`
+            }
+        },
+        password: {
+            type: String,
+            required: true,
+            minlength: 6
+        }
+    });
+
+    userSchema.pre('save', async function (next) {
+        if (!this.isModified('password')) return next();
+        this.password = await bcrypt.hash(this.password, 10);
+        next();
+    });
+
+
+    userSchema.methods.comparePassword = function (candidate) {
+        return bcrypt.compare(candidate, this.password);
+    };
+
+    const User = mongoose.model('User', userSchema);
+    module.exports = User;
