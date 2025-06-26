@@ -1,0 +1,111 @@
+1. Conditional Validation: Implement validation that requires phone number only if user role is 'admin', using express-validator's conditional logic.
+
+
+    // routes/user.js
+    const { body, validationResult } = require('express-validator');
+    const express = require('express');
+    const router = express.Router();
+
+    router.post('/users',
+        [
+            body('role')
+            .exists().withMessage('Role is required')
+            .isIn(['admin', 'user']).withMessage('Invalid role'),
+
+            body('phone')
+            .if(body('role').equals('admin'))
+            .notEmpty().withMessage('Phone number is required for admin')
+            .isMobilePhone().withMessage('Invalid phone number'),
+        ],
+        (req, res) => {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({ errors: errors.array() });
+            }
+            res.status(200).json({ message: 'User validated successfully!' });
+        }
+    );
+
+    module.exports = router;
+
+
+2. Token Blacklisting Build a system to blacklist JWT tokens on logout and check blacklist on each request.
+
+
+    // utils/blacklist.js
+    const blacklistedTokens = new Set();
+
+    function blacklistToken(token) {
+        blacklistedTokens.add(token);
+    }
+
+    function isTokenBlacklisted(token) {
+        return blacklistedTokens.has(token);
+    }
+
+    module.exports = { blacklistToken, isTokenBlacklisted };
+
+
+    // middleware/auth.js
+    const jwt = require('jsonwebtoken');
+    const { isTokenBlacklisted } = require('../utils/blacklist');
+    require('dotenv').config();
+
+    const SECRET = process.env.SECRET;
+
+    function authenticate(req, res, next) {
+        const authHeader = req.headers.authorization;
+
+        if (!authHeader?.startsWith('Bearer ')) {
+            return res.status(401).json({ message: 'Authorization header missing or invalid' });
+        }
+
+        const token = authHeader.split(' ')[1];
+
+        if (isTokenBlacklisted(token)) {
+            return res.status(401).json({ message: 'Token has been blacklisted' });
+        }
+
+        try {
+            const decoded = jwt.verify(token, SECRET);
+            req.user = decoded;
+            next();
+        } catch (err) {
+            return res.status(401).json({ message: 'Invalid or expired token' });
+        }
+    }
+
+    module.exports = authenticate;
+
+
+    // routes/auth.js
+    const express = require('express');
+    const { blacklistToken } = require('../utils/blacklist');
+    const authenticate = require('../middleware/auth');
+
+    const router = express.Router();
+
+    router.post('/logout', authenticate, (req, res) => {
+        const token = req.headers.authorization.split(' ')[1];
+        blacklistToken(token);
+        res.status(200).json({ message: 'Logged out and token blacklisted' });
+    });
+
+    module.exports = router;
+
+
+    // routes/protected.js
+    const express = require('express');
+    const authenticate = require('../middleware/auth');
+
+    const router = express.Router();
+
+    router.get('/profile', authenticate, (req, res) => {
+        res.json({ user: req.user });
+    });
+
+    module.exports = router;
+
+
+3. CSV File Processor Build an upload handler that accepts CSV files, validates content, and imports data to MongoDB.
+
