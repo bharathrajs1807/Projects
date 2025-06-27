@@ -1,0 +1,45 @@
+# SNS Backend API Endpoints (http://localhost:8080)
+
+# Auth
+POST   /auth/sign-up                - Register a new user (body: email, username, password, firstName, lastName, ...)
+POST   /auth/log-in                 - Login (body: identifier, password)
+POST   /auth/log-out                - Logout (body: refreshToken)
+POST   /auth/refresh                - Refresh access token (body: refreshToken)
+
+# User
+GET    /user/:username              - Get public user profile
+PATCH  /user/:username              - Update user profile (body: fields to update)
+PATCH  /user/:username/change-password - Change password (body: oldPassword, newPassword)
+POST   /user/:username/follow       - Follow a user
+POST   /user/:username/unfollow     - Unfollow a user
+DELETE /user/:username              - Delete user
+GET    /user/search?query=...       - Search users by username or full name
+
+# Post
+GET    /post?skip=0&limit=10        - Get paginated posts (all users)
+GET    /post/:postId?commentSkip=0&commentLimit=10 - Get a post with paginated comments
+POST   /post                        - Create a post (body: content)
+PATCH  /post/:postId                - Update a post (body: content)
+DELETE /post/:postId                - Delete a post
+
+# Wall/Feed
+GET    /post/wall?skip=0&limit=10   - Get recent posts from followed users and self
+
+# Post Reactions
+POST   /post/:postId/like           - Like a post
+POST   /post/:postId/unlike         - Unlike a post
+POST   /post/:postId/dislike        - Dislike a post
+POST   /post/:postId/undislike      - Remove dislike from a post
+
+# Comments
+POST   /post/:postId/comments       - Add a comment (body: comment)
+PATCH  /post/:postId/comments/:commentId - Edit a comment (body: comment)
+DELETE /post/:postId/comments/:commentId - Delete a comment
+
+# Replies
+POST   /post/:postId/comments/:commentId/replies - Add a reply (body: comment)
+PATCH  /post/:postId/comments/:commentId/replies/:replyId - Edit a reply (body: comment)
+DELETE /post/:postId/comments/:commentId/replies/:replyId - Delete a reply
+
+# Health
+GET    /                            - Health check 
