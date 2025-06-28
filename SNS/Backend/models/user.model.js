@@ -52,12 +52,28 @@ const userSchema = new mongoose.Schema({
         required: false,
         maxlength: [1000, "Bio cannot exceed 1000 characters"]
     },
+    profileImage: {
+        type: String,
+        required: false
+    },
     role: {
         type: String,
         enum: ["admin", "user"],
         default: "user"
     },
     following: {
+        users: {
+            type: [mongoose.Schema.Types.ObjectId],
+            ref: "User",
+            default: []
+        },
+        count: {
+            type: Number,
+            default: 0,
+            immutable: true
+        }
+    },
+    followers: {
         users: {
             type: [mongoose.Schema.Types.ObjectId],
             ref: "User",

@@ -43,13 +43,11 @@ const ProfilePage = () => {
   const fetchUserPosts = async () => {
     try {
       setPostsLoading(true);
-      // This is a simplified approach - in reality, you'd have a user-specific posts endpoint
-      const postsData = await postService.getPosts(0, 20);
-      // Filter posts by the user (this would be handled by the backend normally)
-      const userPosts = postsData.posts?.filter((post) => post.author.username === username) || [];
+      const userPosts = await postService.getPostsByUsername(username);
       setPosts(userPosts);
     } catch (err) {
       console.error('Error fetching user posts:', err);
+      setPosts([]);
     } finally {
       setPostsLoading(false);
     }
@@ -77,10 +75,10 @@ const ProfilePage = () => {
   };
 
   const formatJoinDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'long',
-      year: 'numeric'
-    });
+    if (!dateString) return "Unknown";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "Unknown";
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
 
   if (loading) {
@@ -145,10 +143,17 @@ const ProfilePage = () => {
           <div className="flex-1 text-center md:text-left">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                  {profile.firstName} {profile.lastName}
-                </h1>
-                <p className="text-gray-600">@{profile.username}</p>
+                <div className="text-xl font-bold">{profile.firstName} {profile.lastName}</div>
+                <div className="text-gray-500">@{profile.username}</div>
+                {profile.bio && <div className="mt-2">{profile.bio}</div>}
+                {profile.email && <div className="mt-2 text-sm text-gray-500">{profile.email}</div>}
+                {profile.phoneNumber && <div className="mt-2 text-sm text-gray-500">{profile.phoneNumber}</div>}
+                {profile.gender && <div className="mt-2 text-sm text-gray-500">{profile.gender}</div>}
+                {profile.birthday && (
+                  <div className="mt-2 text-sm text-gray-500">
+                    Birthday: {new Date(profile.birthday).toLocaleDateString()}
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons */}
@@ -181,11 +186,6 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            {/* Bio */}
-            {profile.bio && (
-              <p className="text-gray-800 mb-4 leading-relaxed">{profile.bio}</p>
-            )}
-
             {/* Profile Details */}
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-gray-600 mb-4">
               {profile.location && (
@@ -215,6 +215,24 @@ const ProfilePage = () => {
                 <span className="text-gray-600 ml-1">Following</span>
               </div>
             </div>
+
+            {/* Followers/Following List */}
+            <div className="flex space-x-6 mt-4">
+              <div>
+                <span className="font-bold">{profile.followersCount}</span> Followers
+              </div>
+              <div>
+                <span className="font-bold">{profile.followingCount}</span> Following
+              </div>
+            </div>
+
+            {/* To list followers/following (IDs): */}
+            {profile.followers?.users?.map(followerId => (
+              <UserCard key={followerId} userId={followerId} />
+            ))}
+            {profile.following?.users?.map(followingId => (
+              <UserCard key={followingId} userId={followingId} />
+            ))}
           </div>
         </div>
       </div>

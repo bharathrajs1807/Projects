@@ -1,33 +1,33 @@
 const express = require('express');
-
-const PostController = require('../controllers/post.controller');
-
-const PostRouter = express.Router();
+const router = express.Router();
+const postController = require('../controllers/post.controller');
+const auth = require('../middlewares/auth.middleware');
 
 // Post CRUD
-PostRouter.get("/", PostController.getPosts);
-PostRouter.post("/", PostController.createPost);
-PostRouter.get("/:postId", PostController.getPost);
-PostRouter.patch("/:postId", PostController.updatePost);
-PostRouter.delete("/:postId", PostController.deletePost);
+router.get("/", postController.getPosts);
+router.post("/", postController.createPost);
+router.get("/:postId", postController.getPost);
+router.patch("/:postId", postController.updatePost);
+router.delete("/:postId", postController.deletePost);
 
 // Reactions
-PostRouter.post("/:postId/like", PostController.likePost);
-PostRouter.post("/:postId/unlike", PostController.unlikePost);
-PostRouter.post("/:postId/dislike", PostController.dislikePost);
-PostRouter.post("/:postId/undislike", PostController.undislikePost);
+router.post("/:postId/like", postController.likePost);
+router.post("/:postId/unlike", postController.unlikePost);
+router.post("/:postId/dislike", postController.dislikePost);
+router.post("/:postId/undislike", postController.undislikePost);
 
 // Comments
-PostRouter.post("/:postId/comments", PostController.addComment);
-PostRouter.patch("/:postId/comments/:commentId", PostController.editComment);
-PostRouter.delete("/:postId/comments/:commentId", PostController.deleteComment);
+router.post("/:postId/comments", postController.addComment);
+router.patch("/:postId/comments/:commentId", postController.editComment);
+router.delete("/:postId/comments/:commentId", postController.deleteComment);
 
 // Replies
-PostRouter.post("/:postId/comments/:commentId/replies", PostController.addReply);
-PostRouter.patch("/:postId/comments/:commentId/replies/:replyId", PostController.editReply);
-PostRouter.delete("/:postId/comments/:commentId/replies/:replyId", PostController.deleteReply);
+router.post("/:postId/comments/:commentId/replies", postController.addReply);
+router.patch("/:postId/comments/:commentId/replies/:replyId", postController.editReply);
+router.delete("/:postId/comments/:commentId/replies/:replyId", postController.deleteReply);
 
 // Wall
-PostRouter.get("/wall", PostController.getWallPosts);
+router.get("/wall", postController.getWallPosts);
+router.get('/user/:username', auth, postController.getPostsByUsername);
 
-module.exports = PostRouter;
+module.exports = router;

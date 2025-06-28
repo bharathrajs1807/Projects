@@ -1,17 +1,13 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
 
-const DB_URL = process.env.DB_URL;
+const DB_URL = process.env.DB_URL || 'mongodb://localhost:27017/sns';
 const MAX_RETRIES = 5;
 const RETRY_DELAY = 5000;
 
 let retries = 0;
 
 async function connectDB() {
-    if (!DB_URL) {
-        console.error("❌ DB_URL is not defined in environment variables");
-        process.exit(1);
-    }
     async function connectWithRetry() {
         try {
             await mongoose.connect(DB_URL, {

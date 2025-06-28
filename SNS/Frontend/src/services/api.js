@@ -23,10 +23,10 @@ class ApiService {
   }
 
   // Auth endpoints
-  async login(identifier, password) {
+  async login(credentials) {
     return this.request('/auth/log-in', {
       method: 'POST',
-      body: JSON.stringify({ identifier, password }),
+      body: JSON.stringify(credentials),
     });
   }
 
@@ -49,6 +49,14 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify({ refreshToken }),
     });
+  }
+
+  async getMe() {
+    return this.request('/auth/me');
+  }
+
+  async testDatabase() {
+    return this.request('/test');
   }
 
   // User endpoints
@@ -178,6 +186,10 @@ class ApiService {
     return this.request(`/post/${postId}/comments/${commentId}/replies/${replyId}`, {
       method: 'DELETE',
     });
+  }
+
+  async getPostsByUsername(username) {
+    return this.request(`/posts/user/${username}`, { method: 'GET' });
   }
 }
 

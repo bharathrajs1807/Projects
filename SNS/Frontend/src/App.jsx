@@ -6,6 +6,7 @@ import LoginForm from './components/Auth/LoginForm';
 import SignupForm from './components/Auth/SignupForm';
 import Feed from './components/Feed/Feed';
 import ProfilePage from './components/Profile/ProfilePage';
+import EditProfileForm from './components/Profile/EditProfileForm';
 import SearchPage from './components/Search/SearchPage';
 
 const ProtectedRoute = ({ children }) => {
@@ -88,6 +89,14 @@ const AppContent = () => {
             element={
               <ProtectedRoute>
                 <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/edit"
+            element={
+              <ProtectedRoute>
+                <EditProfileForm />
               </ProtectedRoute>
             }
           />

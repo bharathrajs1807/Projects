@@ -59,8 +59,7 @@ const postSchema = new mongoose.Schema({
         },
         count: {
             type: Number,
-            default: 0,
-            immutable: true
+            default: 0
         }
     },
     dislikes: {
@@ -71,8 +70,7 @@ const postSchema = new mongoose.Schema({
         },
         count: {
             type: Number,
-            default: 0,
-            immutable: true
+            default: 0
         }
     },
     comments: [commentSchema]

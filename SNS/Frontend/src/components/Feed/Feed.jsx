@@ -18,20 +18,41 @@ const Feed = () => {
         setLoading(true);
       }
 
+      // Test database connection first
+      try {
+        await postService.testDatabase();
+        console.log('Database connection test passed');
+      } catch (dbError) {
+        console.error('Database connection test failed:', dbError);
+        throw new Error('Database connection failed');
+      }
+
       // Try to get feed first (posts from followed users), fallback to all posts
       let postsData;
       try {
         postsData = await postService.getFeed(0, 20);
+        console.log('Feed received posts data:', postsData);
       } catch (feedError) {
+        console.log('Feed failed, falling back to all posts:', feedError);
         // If feed fails, get all posts
-        postsData = await postService.getPosts(0, 20);
+        try {
+          postsData = await postService.getPosts(0, 20);
+          console.log('All posts received:', postsData);
+        } catch (postsError) {
+          console.error('Both feed and posts failed:', postsError);
+          throw postsError;
+        }
       }
 
-      setPosts(postsData.posts || postsData || []);
+      // Handle both array and object responses
+      const postsArray = Array.isArray(postsData) ? postsData : (postsData.posts || []);
+      console.log('Feed processed posts array:', postsArray);
+      setPosts(postsArray);
       setError('');
     } catch (err) {
-      setError(err.message || 'Failed to load posts');
       console.error('Error fetching posts:', err);
+      setError(err.message || 'Failed to load posts');
+      setPosts([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -43,13 +64,18 @@ const Feed = () => {
   }, []);
 
   const handlePostCreated = (newPost) => {
+    if (!newPost) return;
+    
+    console.log('Feed received new post:', newPost);
     setPosts(prev => [newPost, ...prev]);
   };
 
   const handlePostUpdate = (postId, content) => {
+    if (!postId) return;
+    
     setPosts(prev =>
       prev.map(post =>
-        post.id === postId
+        (post.id || post._id) === postId
           ? { ...post, content, updatedAt: new Date().toISOString() }
           : post
       )
@@ -57,7 +83,9 @@ const Feed = () => {
   };
 
   const handlePostDelete = (postId) => {
-    setPosts(prev => prev.filter(post => post.id !== postId));
+    if (!postId) return;
+    
+    setPosts(prev => prev.filter(post => (post.id || post._id) !== postId));
   };
 
   const handleRefresh = () => {
@@ -96,7 +124,7 @@ const Feed = () => {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Your Feed</h1>
         <button
-          onClick={handleRefresh}
+          onClick={handleRefresh || (() => {})}
           disabled={refreshing}
           className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-purple-600 transition-colors duration-200"
         >
@@ -106,7 +134,7 @@ const Feed = () => {
       </div>
 
       {/* Create Post */}
-      <CreatePost onPostCreated={handlePostCreated} />
+      <CreatePost onPostCreated={handlePostCreated || (() => {})} />
 
       {/* Error State */}
       {error && (
@@ -117,7 +145,7 @@ const Feed = () => {
 
       {/* Posts */}
       <div className="space-y-6">
-        {posts.length === 0 && !loading && !error ? (
+        {(!posts || posts.length === 0) && !loading && !error ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <RefreshCw className="w-8 h-8 text-gray-400" />
@@ -128,21 +156,24 @@ const Feed = () => {
             </p>
           </div>
         ) : (
-          posts.map((post) => (
+          posts && posts.map((post) => (
             <PostCard
-              key={post.id}
+              key={post.id || post._id || Math.random()}
               post={post}
-              onUpdate={handlePostUpdate}
-              onDelete={handlePostDelete}
+              onUpdate={handlePostUpdate || (() => {})}
+              onDelete={handlePostDelete || (() => {})}
             />
           ))
         )}
       </div>
 
       {/* Load More Button (for future pagination) */}
-      {posts.length > 0 && (
+      {posts && posts.length > 0 && (
         <div className="text-center mt-8">
-          <button className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200">
+          <button 
+            onClick={() => {}} // Placeholder for future pagination
+            className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200"
+          >
             Load More Posts
           </button>
         </div>

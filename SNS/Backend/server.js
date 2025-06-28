@@ -36,6 +36,21 @@ app.get("/", (req, res) => {
     res.status(200).json({ message: "Healthy" });
 });
 
+app.get("/test", async (req, res) => {
+    try {
+        const userCount = await mongoose.model('User').countDocuments();
+        const postCount = await mongoose.model('Post').countDocuments();
+        res.status(200).json({ 
+            message: "Database connection working",
+            userCount,
+            postCount
+        });
+    } catch (error) {
+        console.error('Test endpoint error:', error);
+        res.status(500).json({ message: "Database connection failed", error: error.message });
+    }
+});
+
 app.use("/auth", AuthRouter);
 app.use("/user", authMiddleware, UserRouter);
 app.use("/post", authMiddleware, PostRouter);
@@ -48,12 +63,18 @@ app.use(errorMiddleware);
 
 const startServer = async () => {
     try {
+        console.log('Starting server...');
+        console.log('Connecting to database...');
         await connectDB();
+        console.log('Database connected successfully');
+        
         server.listen(PORT, () => {
-            console.log(`The server is running at http://localhost:${PORT}`);
+            console.log(`✅ The server is running at http://localhost:${PORT}`);
+            console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+            console.log(`🔗 CORS origin: http://localhost:5173`);
         });
     } catch (err) {
-        console.error("Failed to start server:", err);
+        console.error("❌ Failed to start server:", err);
         process.exit(1);
     }
 };

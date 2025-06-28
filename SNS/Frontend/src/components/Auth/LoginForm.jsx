@@ -25,17 +25,7 @@ const LoginForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      await login(formData.identifier, formData.password);
-      navigate('/');
-    } catch (err) {
-      setError(err.message || 'Login failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    await login(formData);
   };
 
   return (

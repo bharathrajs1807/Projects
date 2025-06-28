@@ -7,10 +7,28 @@ exports.getUser = async (req, res) => {
     try {
         const user = await User.findOne({ username: req.params.username }).select("-password -refreshToken");
         if (!user) return res.status(404).json({ message: "User not found" });
-        const followersCount = await User.countDocuments({ 'following.users': user._id });
+
+        // Defensive: ensure followers/following are always present
+        if (!user.followers) user.followers = { users: [], count: 0 };
+        if (!user.following) user.following = { users: [], count: 0 };
+
+        // Determine if the current user follows this profile
+        let isFollowing = false;
+        if (req.user) {
+            const currentUser = await User.findOne({ username: req.user });
+            if (currentUser && currentUser.following && Array.isArray(currentUser.following.users)) {
+                isFollowing = currentUser.following.users.some(id => id.equals(user._id));
+            }
+        }
+
         res.status(200).json({
             ...user.toObject(),
-            followersCount
+            joinedAt: user.createdAt,
+            followers: user.followers,
+            following: user.following,
+            followersCount: user.followers.count,
+            followingCount: user.following.count,
+            isFollowing
         });
     } catch (err) {
         console.error("Get user error:", err);
@@ -92,8 +110,23 @@ exports.followUser = async (req, res) => {
         if (!currentUser || !targetUser) return res.status(404).json({ message: "User not found" });
         if (currentUser._id.equals(targetUser._id)) return res.status(400).json({ message: "You can't follow yourself" });
 
-        const followed = await currentUser.follow(targetUser._id);
-        if (!followed) return res.status(400).json({ message: "Already following this user" });
+        // Add to following
+        const alreadyFollowing = currentUser.following.users.some(id => id.equals(targetUser._id));
+        if (!alreadyFollowing) {
+            currentUser.following.users.push(targetUser._id);
+            currentUser.following.count = currentUser.following.users.length;
+            await currentUser.save();
+        }
+
+        // Add to followers
+        const alreadyFollower = targetUser.followers.users.some(id => id.equals(currentUser._id));
+        if (!alreadyFollower) {
+            targetUser.followers.users.push(currentUser._id);
+            targetUser.followers.count = targetUser.followers.users.length;
+            await targetUser.save();
+        }
+
+        if (alreadyFollowing) return res.status(400).json({ message: "Already following this user" });
 
         res.status(200).json({ message: `Followed ${targetUser.username}` });
     } catch (err) {
@@ -110,8 +143,23 @@ exports.unfollowUser = async (req, res) => {
 
         if (!currentUser || !targetUser) return res.status(404).json({ message: "User not found" });
 
-        const unfollowed = await currentUser.unfollow(targetUser._id);
-        if (!unfollowed) return res.status(400).json({ message: "You are not following this user" });
+        // Remove from following
+        const wasFollowing = currentUser.following.users.some(id => id.equals(targetUser._id));
+        if (wasFollowing) {
+            currentUser.following.users = currentUser.following.users.filter(id => !id.equals(targetUser._id));
+            currentUser.following.count = currentUser.following.users.length;
+            await currentUser.save();
+        }
+
+        // Remove from followers
+        const wasFollower = targetUser.followers.users.some(id => id.equals(currentUser._id));
+        if (wasFollower) {
+            targetUser.followers.users = targetUser.followers.users.filter(id => !id.equals(currentUser._id));
+            targetUser.followers.count = targetUser.followers.users.length;
+            await targetUser.save();
+        }
+
+        if (!wasFollowing) return res.status(400).json({ message: "You are not following this user" });
 
         res.status(200).json({ message: `Unfollowed ${targetUser.username}` });
     } catch (err) {
@@ -158,5 +206,36 @@ exports.searchUsers = async (req, res) => {
     } catch (err) {
         console.error('Search users error:', err);
         res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
+exports.getCurrentUser = async (req, res) => {
+    try {
+        const user = await User.findById(req.userId).select("-password -refreshToken");
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        res.status(200).json({
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                phoneNumber: user.phoneNumber,
+                gender: user.gender,
+                birthday: user.birthday,
+                bio: user.bio,
+                profileImage: user.profileImage,
+                following: user.following,
+                followers: user.followers,
+                posts: user.posts,
+                joinedAt: user.createdAt,
+                postsCount: user.posts ? user.posts.count : 0,
+            }
+        });
+    } catch (error) {
+        console.error("Get current user error:", error);
+        res.status(500).json({ message: "Internal Server Error" });
     }
 };

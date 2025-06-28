@@ -15,6 +15,7 @@ const CreatePost = ({ onPostCreated }) => {
     setLoading(true);
     try {
       const newPost = await postService.createPost(content);
+      console.log('CreatePost received response:', newPost);
       setContent('');
       if (onPostCreated) {
         onPostCreated(newPost);

@@ -5,11 +5,13 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const SignupForm = () => {
   const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
     email: '',
     username: '',
     password: '',
-    firstName: '',
-    lastName: '',
+    phoneNumber: '',
+    gender: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -74,7 +76,7 @@ const SignupForm = () => {
                   placeholder="First name"
                 />
               </div>
-              
+
               <div>
                 <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
                   Last Name
@@ -158,6 +160,41 @@ const SignupForm = () => {
                   )}
                 </button>
               </div>
+            </div>
+
+            <div>
+              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                Phone Number
+              </label>
+              <input
+                id="phoneNumber"
+                name="phoneNumber"
+                type="text"
+                value={formData.phoneNumber || ''}
+                onChange={handleChange}
+                className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                placeholder="Enter your 10-digit phone number"
+                pattern="\d{10}"
+                maxLength={10}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-1">
+                Gender
+              </label>
+              <select
+                id="gender"
+                name="gender"
+                value={formData.gender || ''}
+                onChange={handleChange}
+                className="appearance-none relative block w-full px-3 py-3 border border-gray-300 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+              >
+                <option value="">Select gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="others">Others</option>
+              </select>
             </div>
           </div>
 
